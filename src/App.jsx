@@ -1,23 +1,59 @@
 import "./App.css";
-import Profile from "./components/Profile/Profile";
-import userData from "./components/Profile/userData.json";
-import friends from "./components/FriendList/friends.json";
-import FriendList from "./components/FriendList/FriendList";
-import TransactionHistory from "./components/TransactionHistory/TransactionHistory";
-import transactions from "./components/TransactionHistory/transactions.json";
+
+import { useEffect, useState } from "react";
+
+import ContactList from "./components/ContactList/ContactList.jsx";
+
+import initialContacts from "./components/ContactList/contacts.json";
+import { nanoid } from "nanoid";
+import ContactForm from "./components/ContactForm/ContactForm";
+import SearchBox from "./components/SearchBox/SearchBox.jsx";
 
 function App() {
+  const [contacts, setContacts] = useState(() => {
+    const stringifiedContacts = localStorage.getItem("contacts");
+    if (!stringifiedContacts) return initialContacts;
+
+    const parsedContacts = JSON.parse(stringifiedContacts);
+    return parsedContacts;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("contacts", JSON.stringify(contacts));
+  }, [contacts]);
+
+  const addContact = (formData) => {
+    const finalContact = {
+      ...formData,
+      id: nanoid(),
+    };
+
+    setContacts((prevState) => {
+      return [...prevState, finalContact];
+    });
+  };
+
+  const deleteContact = (contactId) => {
+    setContacts((prevState) => {
+      return prevState.filter((contact) => contact.id !== contactId);
+    });
+  };
+
+  const [filter, setFilter] = useState("");
+
+  const onChangeFilter = (event) => {
+    setFilter(event.target.value);
+  };
+
+  const filteredContacts = contacts.filter((contact) =>
+    contact.name.toLowerCase().includes(filter.toLowerCase())
+  );
   return (
     <>
-      <Profile
-        name={userData.username}
-        tag={userData.tag}
-        location={userData.location}
-        image={userData.avatar}
-        stats={userData.stats}
-      />
-      <FriendList friends={friends} />
-      <TransactionHistory items={transactions} />
+      <h1>Phonebook</h1>
+      <ContactForm addContact={addContact} />
+      <SearchBox value={filter} onChange={onChangeFilter} />
+      <ContactList contacts={filteredContacts} deleteContact={deleteContact} />
     </>
   );
 }
